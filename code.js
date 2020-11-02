@@ -107,12 +107,19 @@ function parseDeck(deckContent)
             category += categories.get(element);
         });
 
+        // Piece together card fields
         var line = qty + "x " + title + " (" + set + ") ";
         if (foil)
         {
             line += "*F* ";
         }
-        line += "[" + category + "]\n";
+        if (category.length)
+        {
+
+            line += "[" + category + "]";
+        }
+        line += "\n";
+
         decklist += line;
     }
     return decklist;
@@ -133,6 +140,7 @@ function backupDecks(config)
     {
         // Retrieve deck content
         var filename = deck.name.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+        filename += "." + deck.id;
         var deckUrl = apiUrl + "decks/" + deck.id + "/small/?format=json";
         var deckContent = getData(deckUrl);
 
