@@ -1,5 +1,5 @@
 {
-  "timeZone": "America/New_York",
+  "timeZone": "Australia/Melbourne",
   "dependencies": {
   },
   "exceptionLogging": "STACKDRIVER",
