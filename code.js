@@ -4,7 +4,10 @@ const apiUrl = "https://www.archidekt.com/api/";
 
 function getData(url)
 {
-    var response = UrlFetchApp.fetch(url);
+    var options = {
+        "muteHttpExceptions": true
+    };
+    var response = UrlFetchApp.fetch(url, options);
     return response.getContentText();
 }
 
@@ -19,26 +22,24 @@ function retrieveFolder(folderMap, folderId)
     var folderUrl = apiUrl + "decks/folders/" + folderId + "/?format=json";
     var folderData = getData(folderUrl);
     var folder = JSON.parse(folderData);
-    
+
     // Retrieve the parent folder, to create this folder in
-    var parentFolderId;
     // Check that this folder is accessible (public)
     if (folder.detail == "Authentication credentials were not provided.")
     {
-        parentFolderId = 0;
+        // Treat this folder as if it were the root backup folder
+        return folderMap.get(0);
     }
-    else
-    {
-        // Retrieve the root backup folder, if this doesn't have a parent folder
-        parentFolderId = (folder.parentFolder == null) ? 0 : folder.parentFolder.id;
-    }
+
+    // Retrieve the root backup folder, if this doesn't have a parent folder
+    var parentFolderId = (folder.parentFolder == null) ? 0 : folder.parentFolder.id;
     var parentFolder = retrieveFolder(folderMap, parentFolderId);
 
     // Create the folder, or get its Drive ID
     var thisFolder = findOrCreateFolder(parentFolder, folder.name);
     folderMap.set(folderId, thisFolder.getId());
     return thisFolder.getId();
-} 
+}
 
 function parseDeck(deck)
 {
@@ -131,12 +132,16 @@ function backupDecks(config)
 
         // Retrieve folder from deck
         // Create or retrieve folder
-        var folder = retrieveFolder(folderMap, deck.parentFolder);
+        var folder = retrieveFolder(folderMap, deckJson.parentFolder);
 
         // Save unmodified deck JSON, if requested
         if (config.saveAsJson)
         {
-            updateOrCreateFile(folder, filename + ".json", deckContent);
+            // Exclude view count field
+            // It increments no matter what, so it's not really meaningful
+            delete deckJson.viewCount;
+
+            updateOrCreateFile(folder, filename + ".json", JSON.stringify(deckJson, null, 4));
         }
 
         //  Parse JSON into decklist, if requested
