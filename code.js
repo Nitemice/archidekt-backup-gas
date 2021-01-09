@@ -36,7 +36,7 @@ function retrieveFolder(folderMap, folderId)
     var parentFolder = retrieveFolder(folderMap, parentFolderId);
 
     // Create the folder, or get its Drive ID
-    var thisFolder = findOrCreateFolder(parentFolder, folder.name);
+    var thisFolder = common.findOrCreateFolder(parentFolder, folder.name);
     folderMap.set(folderId, thisFolder.getId());
     return thisFolder.getId();
 }
@@ -71,7 +71,7 @@ function parseDeck(deck)
         var qty = card.quantity;
         var title = card.card.oracleCard.name;
         var set = card.card.edition.editioncode;
-        var foil = card.modifier == "Foil";
+        var foil = (card.modifier == "Foil");
         var category = new String();
         card.categories.forEach(element =>
         {
@@ -100,6 +100,21 @@ function parseDeck(deck)
     return decklist;
 }
 
+function filterDeckJson(deckJson)
+{
+    const output = { ...deckJson };
+    // Exclude fields that change too often.
+    // - view count increments no matter what, so it's not really meaningful
+    // - prices change all the time, and we don't really care
+    delete output.viewCount;
+    for (const key in output.cards)
+    {
+        delete output.cards[key].card.prices;
+    }
+
+    return output;
+}
+
 function backupDecks(config)
 {
     // Retrieve a list of all the (public) decks
@@ -108,7 +123,7 @@ function backupDecks(config)
     var allDecks = JSON.parse(allDeckData);
 
     // Save the list of decks as a json file in the indicated Google Drive folder
-    updateOrCreateFile(config.backupDir, allDecks.username + ".json", allDeckData);
+    common.updateOrCreateFile(config.backupDir, allDecks.username + ".json", allDeckData);
 
     // If we don't need to save individual decks, bail out
     if (!config.saveAsJson && !config.saveAsTxt)
@@ -134,22 +149,20 @@ function backupDecks(config)
         // Create or retrieve folder
         var folder = retrieveFolder(folderMap, deckJson.parentFolder);
 
-        // Save unmodified deck JSON, if requested
-        if (config.saveAsJson)
-        {
-            // Exclude view count field
-            // It increments no matter what, so it's not really meaningful
-            delete deckJson.viewCount;
-
-            updateOrCreateFile(folder, filename + ".json", JSON.stringify(deckJson, null, 4));
-        }
-
         //  Parse JSON into decklist, if requested
         if (config.saveAsTxt)
         {
             var deckList = parseDeck(deckJson);
-            updateOrCreateFile(folder, filename + ".txt", deckList);
+            common.updateOrCreateFile(folder, filename + ".txt", deckList);
         }
+
+        // Save (mostly) unmodified deck JSON, if requested
+        if (config.saveAsJson)
+        {
+            var jsonOutput = JSON.stringify(filterDeckJson(deckJson), null, 4);
+            common.updateOrCreateFile(folder, filename + ".json", jsonOutput);
+        }
+
         // Logger.log("X");
     }
 }
@@ -157,7 +170,7 @@ function backupDecks(config)
 function main()
 {
     // Retrieve config file
-    var config = grabJson(configId);
+    var config = common.grabJson(configId);
 
     // Request all decks separately
     backupDecks(config);
