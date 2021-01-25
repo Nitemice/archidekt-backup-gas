@@ -94,5 +94,10 @@ var common = {
         return input;
     },
 
+    prettyPrintJsonStr: function(input)
+    {
+        return JSON.stringify(JSON.parse(input), null, 4);
+    },
+    
     ////////////////////////////////////////////////////
 }
