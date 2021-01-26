@@ -162,16 +162,11 @@ function backupDecks(config)
             var jsonOutput = JSON.stringify(filterDeckJson(deckJson), null, 4);
             common.updateOrCreateFile(folder, filename + ".json", jsonOutput);
         }
-
-        // Logger.log("X");
     }
 }
 
 function main()
 {
-    // Retrieve config file
-    var config = common.grabJson(configId);
-
     // Request all decks separately
     backupDecks(config);
 }
