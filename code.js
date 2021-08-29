@@ -11,6 +11,22 @@ function getData(url)
     return response.getContentText();
 }
 
+function getAllData(url)
+{
+    var outArray = [];
+
+    do {
+        var data = getData(url);
+        data = JSON.parse(data);
+
+        outArray = outArray.concat(data.results);
+        url = data.next;
+        
+    } while (url != null);
+
+    return outArray;
+}
+
 function retrieveFolder(folderMap, folderId)
 {
     if (folderMap.has(folderId))
@@ -121,18 +137,22 @@ function parseDeckToBasic(deck)
         var qty = card.quantity;
         var title = card.card.oracleCard.name;
 
+        // Strip second names from split/flip/etc. cards
+        title = title.split(" // ")[0];
 
         // Piece together card fields
         var line = qty + " " + title;
         line += "\n";
 
-        // If card is in the special category of "Sideboard",
-        // then it's in the sideboard
-        if (card.categories.includes("Sideboard"))
+        // If card's primary category is the special category of "Sideboard",
+        // then it's in the sideboard.
+        if (card.categories[0] == "Sideboard")
         {
             sideboard += line;
         }
-        else if (!card.categories.some(r => excludedCategories.includes(r)))
+        // If card's primary category is not an excluded category,
+        // then it's in the mainboard.
+        else if (!excludedCategories.includes(card.categories[0]))
         {
             mainboard += line;
         }
@@ -159,25 +179,15 @@ function filterDeckJson(deckJson)
 function backupDecks(config)
 {
     // Retrieve a list of all the (public) decks
-    var userUrl = apiUrl + "users/" + config.userId + "/";
-    var allDeckData = getData(userUrl);
-    var allDecks = JSON.parse(allDeckData);
-
-    // Save the list of decks as a json file in the indicated Google Drive folder
-    common.updateOrCreateFile(config.backupDir, allDecks.username + ".json",
-                              common.prettyPrintJsonStr(allDeckData));
-
-    // If we don't need to save individual decks, bail out
-    if (!config.hasOwnProperty("outputFormat") || !config.outputFormat.length)
-    {
-        return;
-    }
+    var userUrl = apiUrl + "decks/cards/?owner=" + config.username
+         + "&ownerexact=true&pageSize=50";
+    var allDeckData = getAllData(userUrl);
 
     // Setup map for folders to IDs, with root backup dir pre-set
     var folderMap = new Map([[0, config.backupDir]]);
 
     // Iterate through the decks and retrieve each one
-    for (const deck of allDecks.decks)
+    for (const deck of allDeckData)
     {
         // Retrieve deck content
         var filename = deck.name.replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
@@ -215,8 +225,23 @@ function backupDecks(config)
     }
 }
 
+function backupProfile(config)
+{
+    // Retrieve profile data
+    var userUrl = apiUrl + "users/" + config.userId + "/";
+    var profileData = getData(userUrl);
+    var profile = JSON.parse(profileData);
+
+    // Remove decklist (it's probably incomplete anyway)
+    delete profile.decks;
+
+    // Save profile as a json file in the indicated Google Drive folder
+    common.updateOrCreateFile(config.backupDir, profile.username + ".json",
+        JSON.stringify(profile, null, 4));
+}
+
 function main()
 {
-    // Request all decks separately
+    backupProfile(config);
     backupDecks(config);
 }

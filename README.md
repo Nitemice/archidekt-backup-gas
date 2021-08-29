@@ -38,12 +38,14 @@ The basic structure can be seen below.
 
 ```js
 const config = {
+    "username":  "<Archidekt username>",
     "userId": "<Archidekt user ID>",
     "outputFormat":  ["json", "archidekt", "basic"],
     "backupDir": "<Google Drive directory ID>"
 };
 ```
 
+- `username`: Username of the Archidekt user whose deck lists are being exported.
 - `userId`: User ID of the Archidekt user whose deck lists are being exported.
     This can be found by navigating to the user's profile page, and grabbing
     the ID from the tail of the URL.

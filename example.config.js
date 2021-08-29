@@ -1,7 +1,7 @@
 const config = {
+    "username": "Vraska",
     "userId": "1",
-    "saveAsJson": false,
-    "saveAsTxt": true,
+    "outputFormat": ["archidekt", "basic"],
 
     "backupDir": "xzshxhX8QjQnlNuF_KWzSytboL6EvtSLW"
 };
