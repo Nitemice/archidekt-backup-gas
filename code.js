@@ -41,7 +41,7 @@ function retrieveFolder(folderMap, folderId)
     return thisFolder.getId();
 }
 
-function parseDeck(deck)
+function parseDeckToArchidekt(deck)
 {
     // Parse categories, so we have the right category settings
     var categories = new Map();
@@ -100,6 +100,47 @@ function parseDeck(deck)
     return decklist;
 }
 
+function parseDeckToBasic(deck)
+{
+    // Build a list of included/excluded categories
+    var excludedCategories = new Array();
+    for (const category of deck.categories)
+    {
+        if (!category.includedInDeck)
+        {
+            excludedCategories.push(category.name);
+        }
+    }
+
+    // Iterate through each card, parse & append to the decklist
+    var mainboard = new String();
+    var sideboard = new String();
+    for (const card of deck.cards)
+    {
+        // Retrieve card info
+        var qty = card.quantity;
+        var title = card.card.oracleCard.name;
+
+
+        // Piece together card fields
+        var line = qty + " " + title;
+        line += "\n";
+
+        // If card is in the special category of "Sideboard",
+        // then it's in the sideboard
+        if (card.categories.includes("Sideboard"))
+        {
+            sideboard += line;
+        }
+        else if (!card.categories.some(r => excludedCategories.includes(r)))
+        {
+            mainboard += line;
+        }
+
+    }
+    return mainboard + "\n\n" + sideboard;
+}
+
 function filterDeckJson(deckJson)
 {
     const output = { ...deckJson };
@@ -123,10 +164,11 @@ function backupDecks(config)
     var allDecks = JSON.parse(allDeckData);
 
     // Save the list of decks as a json file in the indicated Google Drive folder
-    common.updateOrCreateFile(config.backupDir, allDecks.username + ".json", allDeckData);
+    common.updateOrCreateFile(config.backupDir, allDecks.username + ".json",
+                              common.prettyPrintJsonStr(allDeckData));
 
     // If we don't need to save individual decks, bail out
-    if (!config.saveAsJson && !config.saveAsTxt)
+    if (!config.hasOwnProperty("outputFormat") || !config.outputFormat.length)
     {
         return;
     }
@@ -149,15 +191,23 @@ function backupDecks(config)
         // Create or retrieve folder
         var folder = retrieveFolder(folderMap, deckJson.parentFolder);
 
-        //  Parse JSON into decklist, if requested
-        if (config.saveAsTxt)
+        //  Parse JSON into Archidekt decklist, if requested
+        // if (config.outputFormat.some((x) => x != "json"))
+        if (config.outputFormat.includes("archidekt"))
         {
-            var deckList = parseDeck(deckJson);
-            common.updateOrCreateFile(folder, filename + ".txt", deckList);
+            var deckList = parseDeckToArchidekt(deckJson);
+            common.updateOrCreateFile(folder, filename + ".archidekt.txt", deckList);
+        }
+
+        //  Parse JSON into basic decklist, if requested
+        if (config.outputFormat.includes("basic"))
+        {
+            var deckList = parseDeckToBasic(deckJson);
+            common.updateOrCreateFile(folder, filename + ".basic.txt", deckList);
         }
 
         // Save (mostly) unmodified deck JSON, if requested
-        if (config.saveAsJson)
+        if (config.outputFormat.includes("json"))
         {
             var jsonOutput = JSON.stringify(filterDeckJson(deckJson), null, 4);
             common.updateOrCreateFile(folder, filename + ".json", jsonOutput);

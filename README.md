@@ -39,8 +39,7 @@ The basic structure can be seen below.
 ```js
 const config = {
     "userId": "<Archidekt user ID>",
-    "saveAsJson": true/false,
-    "saveAsTxt": true/false,
+    "outputFormat":  ["json", "archidekt", "basic"],
     "backupDir": "<Google Drive directory ID>"
 };
 ```
@@ -48,12 +47,16 @@ const config = {
 - `userId`: User ID of the Archidekt user whose deck lists are being exported.
     This can be found by navigating to the user's profile page, and grabbing
     the ID from the tail of the URL.
-- `saveAsJson`: This will export each deck as raw, (mostly) unedited JSON file,
-    direct from the API. This is useful if you want to capture some details of
-    the cards or deck that are not preserved by the text format.
-- `saveAsTxt`: This will export each deck as a text file, in the format of
-    Archidekt's edit view, preserving all categories & edition information.
-- `backupDir`: The ID of the Google Drive directory, where exported maps
+- `outputFormat`: An array indicating the desired output format(s).
+    Valid values are:
+    * `json` - Raw, (mostly) unedited JSON file, direct from the API.
+        This is useful if you want to capture some details of the cards or deck
+        that are not preserved by the other formats.
+    * `archidekt` - A text file, in the format of Archidekt's Deck Edit view,
+        preserving all categories & edition information.
+    * `basic` - A text file that only includes the mainboard and sideboard,
+        which can be imported into MTGO.
+- `backupDir`: The ID of the Google Drive directory, where exported data
     should be stored. This can be found by navigating to the folder, and
     grabbing the ID from the tail of the URL.
 
