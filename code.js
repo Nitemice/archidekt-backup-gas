@@ -1,5 +1,25 @@
 const apiUrl = "https://www.archidekt.com/api/";
 
+const formatKey = new Map([
+    [1, 'Standard'],
+    [2, 'Modern'],
+    [3, 'Commander / EDH'],
+    [4, 'Legacy'],
+    [5, 'Vintage'],
+    [6, 'Pauper'],
+    [7, 'Custom'],
+    [8, 'Frontier'],
+    [9, 'Future Standard'],
+    [10, 'Penny Dreadful'],
+    [11, '1v1 Commander'],
+    [12, 'Duel Commander'],
+    [13, 'Brawl'],
+    [14, 'Oathbreaker'],
+    [15, 'Pioneer'],
+    [16, 'Historic'],
+    [17, 'Pauper EDH'],
+]);
+
 ///////////////////////////////////////////////////////////
 
 function getData(url)
@@ -79,6 +99,12 @@ function parseDeckToArchidekt(deck)
         categories.set(category.name, fullCategory);
     }
 
+    // Retrieve deck metadata to include in file
+    var header = new String();
+    header += "# " + deck.name + "\n";
+    header += "# " + formatKey.get(deck.deckFormat) + "\n";
+    header += "\n";
+
     // Iterate through each card, parse & append to the decklist
     var decklist = new String();
     for (const card of deck.cards)
@@ -113,7 +139,7 @@ function parseDeckToArchidekt(deck)
 
         decklist += line;
     }
-    return decklist;
+    return header + decklist;
 }
 
 function parseDeckToBasic(deck)
@@ -202,7 +228,6 @@ function backupDecks(config)
         var folder = retrieveFolder(folderMap, deckJson.parentFolder);
 
         //  Parse JSON into Archidekt decklist, if requested
-        // if (config.outputFormat.some((x) => x != "json"))
         if (config.outputFormat.includes("archidekt"))
         {
             var deckList = parseDeckToArchidekt(deckJson);
