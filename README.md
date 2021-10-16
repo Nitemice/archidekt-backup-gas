@@ -61,6 +61,8 @@ const config = {
 - `backupDir`: The ID of the Google Drive directory, where exported data
     should be stored. This can be found by navigating to the folder, and
     grabbing the ID from the tail of the URL.
+- `removeMissingDecklists`: This option will remove backed up decklist files if
+    they change name, move folders, or do not match a current decklist.
 
 ### 2. Load the script into a new Google Apps Script project
 

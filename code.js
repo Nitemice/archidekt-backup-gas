@@ -35,13 +35,14 @@ function getAllData(url)
 {
     var outArray = [];
 
-    do {
+    do
+    {
         var data = getData(url);
         data = JSON.parse(data);
 
         outArray = outArray.concat(data.results);
         url = data.next;
-        
+
     } while (url != null);
 
     return outArray;
@@ -206,11 +207,16 @@ function backupDecks(config)
 {
     // Retrieve a list of all the (public) decks
     var userUrl = apiUrl + "decks/cards/?owner=" + config.username
-         + "&ownerexact=true&pageSize=50";
+        + "&ownerexact=true&pageSize=50";
     var allDeckData = getAllData(userUrl);
 
     // Setup map for folders to IDs, with root backup dir pre-set
     var folderMap = new Map([[0, config.backupDir]]);
+
+    // Retrieve a list of decklists for file-management purposes
+    var metaListFile = common.findOrCreateFile(config.backupDir, "meta.list.json", "{}");
+    var killList = common.grabJson(metaListFile.getId());
+    var metaList = {};
 
     // Iterate through the decks and retrieve each one
     for (const deck of allDeckData)
@@ -223,9 +229,19 @@ function backupDecks(config)
         // Convert deck to JSON
         var deckJson = JSON.parse(deckContent);
 
-        // Retrieve folder from deck
-        // Create or retrieve folder
+        // Create or retrieve folder from deck
         var folder = retrieveFolder(folderMap, deckJson.parentFolder);
+
+        // Check that this decklist's name and folder haven't changed since
+        // last time. If they have, they'll be on the kill list,
+        // for us to remove later.
+        if (killList[deck.id] &&
+            killList[deck.id].filename == filename &&
+            killList[deck.id].folderId == folder)
+        {
+            // metaList[deck.id] = killList[deck.id];
+            delete killList[deck.id];
+        }
 
         //  Parse JSON into Archidekt decklist, if requested
         if (config.outputFormat.includes("archidekt"))
@@ -247,7 +263,27 @@ function backupDecks(config)
             var jsonOutput = JSON.stringify(filterDeckJson(deckJson), null, 4);
             common.updateOrCreateFile(folder, filename + ".json", jsonOutput);
         }
+
+        // Add decklist to meta list for next time
+        metaList[deck.id] = {
+            "filename": filename,
+            "folderId": folder
+        };
     }
+
+    // Delete decklists that no longer exist in the API, or have been moved
+    if (config.removeMissingDecklists && Object.keys(killList).length > 0)
+    {
+        for (const [deckId, info] of Object.entries(killList))
+        {
+            common.deleteFile(info.folderId, info.filename + ".archidekt.txt");
+            common.deleteFile(info.folderId, info.filename + ".basic.txt");
+            common.deleteFile(info.folderId, info.filename + ".json");
+        }
+    }
+
+    // Write the meta list for next time
+    metaListFile.setContent(JSON.stringify(metaList));
 }
 
 function backupProfile(config)
