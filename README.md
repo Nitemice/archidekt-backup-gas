@@ -6,8 +6,10 @@ This script can be used to automatically bulk-export a user's collection of
 public deck lists as both text and JSON. They are stored in a specified
 Google Drive directory, where they can be easily downloaded or shared.
 
-**NOTE**: All deck lists being exported (and the folders they are in, if you want to maintain the folder structure) must be set to public.
-This option can be found under the "Settings" for each deck, or in the "⫶" menu in the folder view.
+**NOTE**: All deck lists being exported (and the folders they are in, if you
+          want to maintain the folder structure) must be set to public.
+          This option can be found under the "Settings" for each deck, or in
+          the "⫶" menu in the folder view.
 
 ## Usage
 

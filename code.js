@@ -192,18 +192,25 @@ function filterDeckJson(deckJson)
 {
     const output = { ...deckJson };
     // Exclude fields that change too often.
-    // - view count increments no matter what, so it's not really meaningful
-    // - prices change all the time, and we don't really care
+    // - View count increments no matter what, so it's not really meaningful.
+    // - Prices change all the time, and we don't really care.
+    // - Online retail IDs: I don't know why, but seem to be constantly changing.
     delete output.viewCount;
     for (const key in output.cards)
     {
         delete output.cards[key].card.prices;
+        delete output.cards[key].card.ckNormalId;
+        delete output.cards[key].card.ckFoilId;
+        delete output.cards[key].card.tcgProductId;
+        delete output.cards[key].card.mtgoNormalId;
+        delete output.cards[key].card.mtgoFoilId;
+        delete output.cards[key].card.cmEd;
     }
 
     return output;
 }
 
-function backupDecks(config)
+function backupDecks()
 {
     // Retrieve a list of all the (public) decks
     var userUrl = apiUrl + "decks/cards/?owner=" + config.username
@@ -286,7 +293,7 @@ function backupDecks(config)
     metaListFile.setContent(JSON.stringify(metaList));
 }
 
-function backupProfile(config)
+function backupProfile()
 {
     // Retrieve profile data
     var userUrl = apiUrl + "users/" + config.userId + "/";
@@ -303,6 +310,6 @@ function backupProfile(config)
 
 function main()
 {
-    backupProfile(config);
-    backupDecks(config);
+    backupProfile();
+    backupDecks();
 }
